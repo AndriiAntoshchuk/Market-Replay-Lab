@@ -1,0 +1,14 @@
+_pycache_/
+*.pyc
+.venv/
+venv/
+.env
+.DS_Store
+feature.py
+orderbook.py
+tests/ 
+validator.py
+data/raw/*
+!data/raw/.gitkeep
+data/*
+!data/raw/
