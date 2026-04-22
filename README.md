@@ -1,21 +1,48 @@
-# Coinbase Level 2 Data Collector
+# Coinbase Level 2 Replay Lab
 
-A simple Python collector for raw Coinbase Exchange Level 2 market data.
+A small Python project for replaying raw Coinbase Level 2 market data, rebuilding the visible order book, and exporting top-of-book features to CSV.
 
-The script connects to the Coinbase WebSocket feed, subscribes to the `level2_batch` channel for `ETH-USD`, and stores every received message as raw JSONL for later replay and order-book reconstruction.
+## Overview
 
-## What this project does
+This project takes raw JSONL market-data files collected from the Coinbase WebSocket feed and reconstructs the Level 2 order book through time.
 
-- connects to the Coinbase public WebSocket feed
-- subscribes to `ETH-USD` Level 2 batched updates
-- stores every received message with a local UTC timestamp
-- writes data into daily folders
-- rotates files when the UTC date changes
-- renames files so the filename reflects the session time range
+The current goal is not strategy execution yet. The goal is to build a correct, replayable market-state dataset that can later be used for:
 
-## Output format
+- microstructure analysis
+- feature engineering
+- execution simulation
+- baseline trading research
 
-The collector writes newline-delimited JSON (`.jsonl`) files into:
+## What the script does
 
-```text
-data/raw/YYYY-MM-DD/
+The replay script:
+
+1. reads a raw JSONL file line by line
+2. parses Coinbase messages
+3. rebuilds the visible Level 2 order book
+4. processes `snapshot` and `l2update` messages
+5. extracts top-of-book metrics after each actionable event
+6. writes the result to a processed CSV file
+
+## Reconstruction rules
+
+The current replay logic follows these rules:
+
+- `snapshot` replaces the full visible book
+- `l2update` changes one or more price levels
+- update size is treated as the new absolute size at that level
+- if update size is `0`, that price level is removed
+- the replay does **not** simulate matching or trade execution
+
+## Input format
+
+The script expects a raw JSONL file where each line has this structure:
+
+```json
+{
+  "timestamp": "2026-04-21T23:17:56.123456+00:00",
+  "message": {
+    "type": "l2update",
+    "...": "raw Coinbase payload"
+  }
+}
